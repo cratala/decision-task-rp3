@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Task</title>
+    <script src="https://unpkg.com/jspsych@7.3.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.2"></script>
+    <link href="https://unpkg.com/jspsych@7.3.3/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .advice-box {
+            position: absolute;
+            right: 5%;
+            top: 150px;
+            width: min(420px, 40vw);
+            max-width: 90%;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            padding: 25px;
+            border: 3px solid black;
+            background-color: #fffef9;
+        }
+        
+        .advice-box.ai {
+            background-color: #fffef9;
+            border-color: black;
+        }
+        
+        .advice-box.human {
+            background-color: #fffef9;
+            border-color: black;
+        }
+        
+        .advice-icon {
+            display: none; /* Icons removed */
+        }
+        
+        .advice-header {
+            font-size: clamp(16px, 2vw, 20px);
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: black;
+        }
+        
+        .advice-header.ai {
+            color: black;
+        }
+        
+        .advice-header.human {
+            color: black;
+        }
+        
+        .advice-text {
+            font-size: clamp(16px, 2vw, 20px);
+            color: black;
+            line-height: 1.7;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+        
+        .advice-recommendation {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: clamp(18px, 2.5vw, 22px);
+            margin-top: 15px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+        
+        .advice-recommendation.in {
+            background: linear-gradient(135deg, #e8f4ff 0%, #d4edff 100%);
+            color: #1a365d;
+        }
+        
+        .advice-recommendation.out {
+            background: linear-gradient(135deg, #fff0e8 0%, #ffe4d4 100%);
+            color: #5c2e00;
+        }
+        
+        .history-container {
+            position: absolute;
+            left: 5%;
+            top: 150px;
+            width: min(380px, 35vw);
+            max-width: 90%;
+        }
+        
+        .history-title {
+            font-size: clamp(14px, 2vw, 18px);
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .history-boxes {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .history-box {
+            width: clamp(70px, 10vw, 85px);
+            height: clamp(85px, 12vw, 100px);
+            min-width: 70px;
+            border: 3px solid black;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .history-box.in {
+            background-color: #e8f4ff;
+        }
+        
+        .history-box.out {
+            background-color: #fff0e8;
+        }
+        
+        .round-label {
+            font-size: clamp(13px, 1.5vw, 16px);
+            margin-bottom: 10px;
+        }
+        
+        .decision-label {
+            font-size: clamp(16px, 2vw, 20px);
+        }
+        
+        .decision-area {
+            position: absolute;
+            bottom: clamp(100px, 15vh, 200px);
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+        
+        .decision-prompt {
+            font-size: clamp(18px, 3vw, 24px);
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        
+        .choice-buttons {
+            display: flex;
+            gap: clamp(20px, 5vw, 50px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .choice-button {
+            width: clamp(150px, 20vw, 200px);
+            height: clamp(60px, 10vh, 80px);
+            font-size: clamp(20px, 3vw, 28px);
+            font-weight: bold;
+            border: 4px solid black;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .choice-button.in {
+            background-color: #e8f4ff;
+        }
+        
+        .choice-button.out {
+            background-color: #fff0e8;
+        }
+        
+        .choice-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .timer-bar-container {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(90%, 900px);
+            max-width: 90%;
+        }
+        
+        .timer-bar-bg {
+            width: 100%;
+            height: clamp(35px, 6vh, 50px);
+            background-color: lightgray;
+            border: 4px solid black;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .timer-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            transition: width 0.1s linear;
+        }
+        
+        .timer-warning {
+            color: #dc2626;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: bold;
+            text-align: center;
+            margin-top: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .instructions {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px 20px;
+            line-height: 1.8;
+            font-size: clamp(16px, 2vw, 18px);
+        }
+        
+        .instructions h1 {
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: clamp(24px, 4vw, 32px);
+        }
+        
+        .instructions h2 {
+            color: #4a5568;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: clamp(20px, 3vw, 26px);
+        }
+        
+        .instructions ul {
+            text-align: left;
+            max-width: 650px;
+            margin: 20px auto;
+            padding-left: 30px;
+        }
+        
+        .break-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            font-size: clamp(18px, 3vw, 24px);
+            text-align: center;
+        }
+        
+        /* Comprehension check button styling */
+        .jspsych-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .jspsych-btn:hover {
+            background-color: #e8f4ff !important;
+            transform: scale(1.05);
+        }
+        
+        .jspsych-btn:active {
+            background-color: #a8d8ff !important;
+            transform: scale(0.98);
+        }
+        
+        .break-title {
+            font-size: clamp(28px, 5vw, 36px);
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #4A5F7A;
+        }
+        
+        .break-countdown {
+            font-size: clamp(36px, 7vw, 48px);
+            font-weight: bold;
+            color: #7B9BB5;
+            margin: 30px 0;
+        }
+        
+        .stress-warning {
+            font-size: clamp(20px, 3.5vw, 28px);
+            color: #dc2626;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fee;
+            border-radius: 10px;
+            border: 3px solid #dc2626;
+            max-width: 90%;
+        }
+        
+        .fixation-cross {
+            font-size: clamp(60px, 10vw, 80px);
+            font-weight: bold;
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .comprehension-feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .comprehension-feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        
+        .comprehension-feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        /* ========== RESPONSIVE MEDIA QUERIES ========== */
+        
+        /* Large tablets and small desktops */
+        @media (max-width: 1200px) {
+            .advice-box {
+                width: min(380px, 42vw);
+            }
+            
+            .history-container {
+                width: min(320px, 38vw);
+            }
+        }
+        
+        /* Tablets - switch to stacked layout */
+        @media (max-width: 968px) {
+            .advice-box {
+                position: relative;
+                right: auto;
+                top: auto;
+                width: 90%;
+                max-width: 450px;
+                margin: 20px auto;
+            }
+            
+            .history-container {
+                position: relative;
+                left: auto;
+                top: auto;
+                width: 90%;
+                max-width: 400px;
+                margin: 20px auto;
+            }
+            
+            .decision-area {
+                position: relative;
+                bottom: auto;
+                margin-top: 30px;
+                margin-bottom: 30px;
+            }
+            
+            .timer-bar-container {
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
+                margin: 20px auto;
+                width: 90%;
+            }
+        }
+        
+        /* Small tablets and large phones */
+        @media (max-width: 768px) {
+            .choice-button {
+                min-width: 130px;
+            }
+            
+            .history-box {
+                min-width: 60px;
+            }
+            
+            .timer-bar-bg {
+                border: 3px solid black;
+            }
+            
+            .break-screen {
+                padding: 30px 20px;
+            }
+        }
+        
+        /* Mobile phones */
+        @media (max-width: 480px) {
+            .advice-box,
+            .history-container {
+                width: 95%;
+                padding: 15px;
+            }
+            
+            .choice-buttons {
+                gap: 15px;
+            }
+            
+            .history-boxes {
+                gap: 10px;
+            }
+            
+            .instructions {
+                padding: 20px 15px;
+                margin: 30px auto;
+            }
+            
+            .decision-area {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body></body>
+<script>
+
+// ============================================================================
+// CONFIGURATION - EASY TO MODIFY
+// ============================================================================
+
+const CONFIG = {
+    // ⚙️ TIMING SETTINGS - Change these values easily
+    DECISION_TIME_WITH_PRESSURE: 8000,  // 8 seconds for Block 2 (time pressure)
+    BREAK_DURATION: 10000,              // 10 seconds break between blocks
+    ITI_DURATION: 500,                  // 500ms between trials
+    FIXATION_DURATION: 500,            // 0.5 second fixation cross
+    
+    // 📊 TRIAL SETTINGS
+    TRIALS_PER_BLOCK: 22,               // 22 trials per block (44 total)
+    TRIALS_PER_ADVICE_TYPE: 6,          // 6 no-advice, 8 AI, 8 human
+    
+    // 💰 PAYOFF SETTINGS
+    ENDOWMENT: 10,                      // Starting amount each round
+    SHARE_AMOUNT: 20                    // Amount if both cooperate
+};
+
+// 🎲 RANDOMLY SELECT TASK TYPE (Social vs Non-social) AND ADVISOR ORDER
+const RISK_DOMAIN = Math.random() < 0.5 ? 'Social' : 'Non-social';
+const ADVISOR_ORDER = Math.random() < 0.5 ? 'ai-first' : 'human-first';
+
+console.log('Task type selected:', RISK_DOMAIN);
+console.log('Advisor order:', ADVISOR_ORDER);
+
+// ============================================================================
+// PARTICIPANT CODE GENERATION
+// ============================================================================
+
+function generateParticipantCode() {
+    // For Non-social (Lottery) condition, use 'LO' prefix
+    if (typeof RISK_DOMAIN !== 'undefined' && RISK_DOMAIN === 'Non-social') {
+        const number = Math.floor(Math.random() * 900) + 100; // 3-digit number (100-999)
+        return `LO${number}`;
+    }
+    
+    // For Social condition (or participant's own code), use random letters
+    const firstLetters = ['A', 'B', 'C', 'D', 'E', 'J', 'K', 'L', 'M', 'N', 'R', 'S', 'T', 'W'];
+    const secondLetters = ['A', 'B', 'C', 'D', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'T', 'W', 'Y'];
+    
+    const first = firstLetters[Math.floor(Math.random() * firstLetters.length)];
+    const second = secondLetters[Math.floor(Math.random() * secondLetters.length)];
+    const number = Math.floor(Math.random() * 90) + 10;
+    
+    return `${first}${second}${number}`;
+}
+
+function generatePartnerCodes(numPartners) {
+    const codes = new Set();
+    while (codes.size < numPartners) {
+        codes.add(generateParticipantCode());
+    }
+    return Array.from(codes);
+}
+
+const PARTICIPANT_CODE = generateParticipantCode();
+const PARTNER_CODES_BLOCK1 = generatePartnerCodes(CONFIG.TRIALS_PER_BLOCK);
+const PARTNER_CODES_BLOCK2 = generatePartnerCodes(CONFIG.TRIALS_PER_BLOCK);
+
+// ============================================================================
+// FIXATION CROSS
+// ============================================================================
+
+function createFixation() {
+    return {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '<div class="fixation-cross">+</div>',
+        choices: "NO_KEYS",
+        trial_duration: CONFIG.FIXATION_DURATION
+    };
+}
+
+// ============================================================================
+// TRIAL GENERATION WITH BLOCKED ADVICE ORDER
+// ============================================================================
+
+function generateAdvice(history, adviceType, shouldBeGoodAdvice = null, fixedRecommendation = null) {
+    const cooperationRate = history.reduce((a, b) => a + b, 0) / history.length;
+    // If shouldBeGoodAdvice not specified, randomize (for backwards compatibility)
+    const isGoodAdvice = shouldBeGoodAdvice !== null ? shouldBeGoodAdvice : (Math.random() < 0.5);
+    
+    let adviceText = '';
+    let recommendation = '';
+    let quality = 'NA';
+    let advisorId = '';
+    let advisorColor = '';
+    
+    if (adviceType !== 'none') {
+        if (adviceType === 'ai') {
+            const aiNumber = Math.floor(Math.random() * 90) + 10;
+            advisorId = `ChatGPT`;
+            advisorColor = 'ai';
+        } else {
+            const letters = ['A', 'B', 'C', 'D', 'E', 'J', 'K', 'L', 'M', 'N', 'R', 'S', 'T', 'W'];
+            const l1 = letters[Math.floor(Math.random() * letters.length)];
+            const l2 = letters[Math.floor(Math.random() * letters.length)];
+            const num = Math.floor(Math.random() * 90) + 10;
+            advisorId = `Participant ${l1}${l2}${num}`;
+            advisorColor = 'human';
+        }
+        
+        adviceText = "advises you to choose";
+        
+        // Use fixed recommendation if provided, otherwise calculate
+        if (fixedRecommendation) {
+            recommendation = fixedRecommendation;
+            // Determine quality based on whether recommendation matches optimal choice
+            const optimalChoice = cooperationRate >= 0.67 ? "IN" : "OUT";
+            quality = (recommendation === optimalChoice) ? 'good' : 'bad';
+        } else {
+            // Original logic for backwards compatibility
+            const optimalChoice = cooperationRate >= 0.67 ? "IN" : "OUT";
+            if (isGoodAdvice) {
+                recommendation = optimalChoice;
+                quality = 'good';
+            } else {
+                recommendation = optimalChoice === "IN" ? "OUT" : "IN";
+                quality = 'bad';
+            }
+        }
+    }
+    
+    return { adviceText, advisorId, advisorColor, recommendation, quality };
+}
+
+// ============================================================================
+// FIXED HISTORY SET FOR CLEAN EXPERIMENTAL DESIGN
+// ============================================================================
+
+// 8 standardized histories covering the full cooperation spectrum
+const FIXED_HISTORIES = [
+    { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT' },
+    { pattern: [1, 0, 0], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' },
+    { pattern: [0, 1, 0], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' },
+    { pattern: [0, 0, 1], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' },
+    { pattern: [1, 1, 0], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' },
+    { pattern: [1, 0, 1], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' },
+    { pattern: [0, 1, 1], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' },
+    { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN' }
+];
+
+function generateTrialSequence(blockNum, partnerCodes) {
+    // ============================================================================
+    // FIXED TRIAL STRUCTURE: 22 trials per block
+    // - Trials 1-6: NO ADVICE (randomized presentation order)
+    // - Trials 7-14: AI ADVICE (randomized presentation order)
+    // - Trials 15-22: HUMAN ADVICE (randomized presentation order)
+    // ============================================================================
+    
+    // Helper function to select random 67% pattern
+    function getRandom67Pattern() {
+        const patterns = [
+            { pattern: [1, 1, 0], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' },
+            { pattern: [1, 0, 1], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' },
+            { pattern: [0, 1, 1], coopRate: 0.67, optimalChoice: 'IN', label: 'High coop (2/3)' }
+        ];
+        return patterns[Math.floor(Math.random() * patterns.length)];
+    }
+    
+    // Helper function to select random 33% pattern
+    function getRandom33Pattern() {
+        const patterns = [
+            { pattern: [1, 0, 0], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' },
+            { pattern: [0, 1, 0], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' },
+            { pattern: [0, 0, 1], coopRate: 0.33, optimalChoice: 'OUT', label: 'Low coop (1/3)' }
+        ];
+        return patterns[Math.floor(Math.random() * patterns.length)];
+    }
+    
+    // ============================================================================
+    // SECTION 1: NO ADVICE (6 trials) - Randomize presentation order
+    // ============================================================================
+    const noAdviceTrials = [
+        { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN', adviceType: 'none', quality: null },
+        { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT', adviceType: 'none', quality: null },
+        { ...getRandom67Pattern(), adviceType: 'none', quality: null },
+        { ...getRandom67Pattern(), adviceType: 'none', quality: null },
+        { ...getRandom33Pattern(), adviceType: 'none', quality: null },
+        { ...getRandom33Pattern(), adviceType: 'none', quality: null }
+    ];
+    
+    // Randomize presentation order
+    const shuffledNoAdvice = [...noAdviceTrials].sort(() => Math.random() - 0.5);
+    
+    // ============================================================================
+    // SECTION 2: AI ADVICE (8 trials) - Randomize presentation order
+    // ============================================================================
+    const aiAdviceTrials = [
+        // Extremes - Good advice
+        { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN', adviceType: 'ai', quality: 'good', recommendation: 'IN' },
+        { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT', adviceType: 'ai', quality: 'good', recommendation: 'OUT' },
+        // Extremes - Bad advice
+        { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN', adviceType: 'ai', quality: 'bad', recommendation: 'OUT' },
+        { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT', adviceType: 'ai', quality: 'bad', recommendation: 'IN' },
+        // Ambiguous 67% - Good advice
+        { ...getRandom67Pattern(), adviceType: 'ai', quality: 'good', recommendation: 'IN' },
+        // Ambiguous 67% - Bad advice
+        { ...getRandom67Pattern(), adviceType: 'ai', quality: 'bad', recommendation: 'OUT' },
+        // Ambiguous 33% - Good advice
+        { ...getRandom33Pattern(), adviceType: 'ai', quality: 'good', recommendation: 'OUT' },
+        // Ambiguous 33% - Bad advice
+        { ...getRandom33Pattern(), adviceType: 'ai', quality: 'bad', recommendation: 'IN' }
+    ];
+    
+    // Randomize presentation order
+    const shuffledAI = [...aiAdviceTrials].sort(() => Math.random() - 0.5);
+    
+    // ============================================================================
+    // SECTION 3: HUMAN ADVICE (8 trials) - Randomize presentation order
+    // ============================================================================
+    const humanAdviceTrials = [
+        // Extremes - Good advice
+        { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN', adviceType: 'human', quality: 'good', recommendation: 'IN' },
+        { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT', adviceType: 'human', quality: 'good', recommendation: 'OUT' },
+        // Extremes - Bad advice
+        { pattern: [1, 1, 1], coopRate: 1.00, optimalChoice: 'IN', label: 'All IN', adviceType: 'human', quality: 'bad', recommendation: 'OUT' },
+        { pattern: [0, 0, 0], coopRate: 0.00, optimalChoice: 'OUT', label: 'All OUT', adviceType: 'human', quality: 'bad', recommendation: 'IN' },
+        // Ambiguous 67% - Good advice
+        { ...getRandom67Pattern(), adviceType: 'human', quality: 'good', recommendation: 'IN' },
+        // Ambiguous 67% - Bad advice
+        { ...getRandom67Pattern(), adviceType: 'human', quality: 'bad', recommendation: 'OUT' },
+        // Ambiguous 33% - Good advice
+        { ...getRandom33Pattern(), adviceType: 'human', quality: 'good', recommendation: 'OUT' },
+        // Ambiguous 33% - Bad advice
+        { ...getRandom33Pattern(), adviceType: 'human', quality: 'bad', recommendation: 'IN' }
+    ];
+    
+    // Randomize presentation order
+    const shuffledHuman = [...humanAdviceTrials].sort(() => Math.random() - 0.5);
+    
+    // ============================================================================
+    // COMBINE ALL SECTIONS IN ORDER (respecting ADVISOR_ORDER)
+    // ============================================================================
+    let allTrialData;
+    
+    if (ADVISOR_ORDER === 'human-first') {
+        // Human advice first (trials 7-14), then AI advice (trials 15-22)
+        allTrialData = [
+            ...shuffledNoAdvice,
+            ...shuffledHuman,
+            ...shuffledAI
+        ];
+    } else {
+        // AI advice first (trials 7-14), then Human advice (trials 15-22)
+        allTrialData = [
+            ...shuffledNoAdvice,
+            ...shuffledAI,
+            ...shuffledHuman
+        ];
+    }
+    
+    // ============================================================================
+    // CREATE TRIALS
+    // ============================================================================
+    const trials = [];
+    for (let i = 0; i < allTrialData.length; i++) {
+        const trialData = allTrialData[i];
+        const history = trialData.pattern;
+        const cooperationRate = trialData.coopRate;
+        
+        // Partner cooperation: probabilistic based on history
+        const willCooperate = Math.random() < cooperationRate;
+        
+        // Generate advice details
+        const adviceType = trialData.adviceType;
+        const advice = generateAdvice(history, adviceType, trialData.quality === 'good', trialData.recommendation);
+        
+        trials.push({
+            block: blockNum,
+            trialNum: i + 1,
+            partnerCode: partnerCodes[i],
+            history: history,
+            cooperationRate: cooperationRate,
+            optimalChoice: trialData.optimalChoice,
+            historyLabel: trialData.label,
+            willCooperate: willCooperate,
+            adviceCondition: adviceType,
+            ...advice
+        });
+    }
+    
+    return trials;
+}
+
+// ============================================================================
+// TRIAL HTML CREATION
+// ============================================================================
+
+function createTrialHTML(trialData, showTimer) {
+    const partnerLabel = RISK_DOMAIN === 'Social' ? 'PARTICIPANT' : 'LOTTERY';
+    
+    const historyHTML = trialData.history.map((choice, idx) => {
+        const choiceLabel = choice === 1 ? 'IN' : 'OUT';
+        const choiceClass = choice === 1 ? 'in' : 'out';
+        return `
+            <div class="history-box ${choiceClass}">
+                <div class="decision-label">${choiceLabel}</div>
+            </div>
+        `;
+    }).join('');
+    
+    let adviceHTML = '';
+    if (trialData.adviceCondition !== 'none') {
+        const recClass = trialData.recommendation.toLowerCase();
+        adviceHTML = `
+            <div class="advice-box ${trialData.advisorColor} hidden" id="advice-display">
+                <div class="advice-header ${trialData.advisorColor}">${trialData.advisorId}</div>
+                <div class="advice-text">
+                    ${trialData.adviceText}
+                    <div class="advice-recommendation ${recClass}">${trialData.recommendation}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    const timerHTML = showTimer ? `
+        <div class="timer-bar-container">
+            <div class="timer-bar-bg">
+                <div class="timer-bar-fill" id="timer-fill"></div>
+            </div>
+            <div class="timer-warning" id="timer-warning" style="display: none;"></div>
+        </div>
+    ` : '';
+    
+    return `
+        ${timerHTML}
+        
+        <div class="history-container" id="history-display">
+            <div class="history-title">${partnerLabel} ${trialData.partnerCode}'s history:</div>
+            <div class="history-boxes">
+                ${historyHTML}
+            </div>
+        </div>
+        
+        ${adviceHTML}
+        
+        <div class="decision-area hidden" id="decision-display">
+            <div class="decision-prompt">You have €${CONFIG.ENDOWMENT}. You play with ${partnerLabel} ${trialData.partnerCode}.<br><br>What do you choose?</div>
+            <div class="choice-buttons">
+                <button class="choice-button in" id="btn-in">IN</button>
+                <button class="choice-button out" id="btn-out">OUT</button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// JSPSYCH EXPERIMENT
+// ============================================================================
+
+const jsPsych = initJsPsych({
+    on_finish: function() {
+        // Get all data
+        const allData = jsPsych.data.get();
+        
+        // Add screen type information to each trial for clarity
+        const processedData = allData.values().map(trial => {
+            // Identify screen type
+            let screenType = 'other';
+            if (trial.trial_type === 'html-keyboard-response') {
+                if (trial.stimulus && trial.stimulus.includes('Welcome')) screenType = 'welcome';
+                else if (trial.stimulus && trial.stimulus.includes('Instructions')) screenType = 'instructions';
+                else if (trial.stimulus && trial.stimulus.includes('Comprehension')) screenType = 'comprehension';
+                else if (trial.stimulus && trial.stimulus.includes('fixation-cross')) screenType = 'fixation';
+                else if (trial.stimulus && trial.stimulus.includes('Break')) screenType = 'break';
+                else if (trial.stimulus && trial.stimulus.includes('Advice Section Complete')) screenType = 'advice_complete';
+            } else if (trial.trial_type === 'html-button-response') {
+                if (trial.stimulus && trial.stimulus.includes('Advice Question')) screenType = 'advice_giving';
+                else if (trial.block) screenType = 'decision_trial';
+            }
+            
+            return {
+                ...trial,
+                screen_type: screenType,
+                participant_code: PARTICIPANT_CODE,
+                risk_domain: RISK_DOMAIN,
+                timestamp: new Date().toISOString()
+            };
+        });
+        
+        // Get CSV format
+        const csvData = jsPsych.data.get().csv();
+        
+        // Create comprehensive JSON with all trial details
+        const jsonData = JSON.stringify(processedData, null, 2);
+        
+        // Show completion message with simple instruction format
+        document.body.innerHTML = `
+            <div class="instructions">
+                <h2>The Decision Task is complete</h2>
+                <p>We will now continue with some questions about the choices you made.</p>
+                <p><em>Press SPACE to continue.</em></p>
+            </div>
+        `;
+        
+        // Handle space key press
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.code === 'Space') {
+                // 📤 SEND ALL DATA TO QUALTRICS (if embedded)
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'experiment_complete',
+                        participant_code: PARTICIPANT_CODE,
+                        risk_domain: RISK_DOMAIN,
+                        data_csv: csvData,
+                        data_json: jsonData,
+                        summary: {
+                            total_trials: processedData.filter(t => t.screen_type === 'decision_trial').length,
+                            advice_trials: processedData.filter(t => t.screen_type === 'advice_giving').length,
+                            completion_time: Date.now()
+                        }
+                    }, '*');
+                } else {
+                    // If not in Qualtrics, show message
+                    alert('Data saved! (In Qualtrics, this will advance automatically)');
+                }
+            }
+        });
+    }
+});
+
+jsPsych.data.addProperties({
+    participant_code: PARTICIPANT_CODE,
+    risk_domain: RISK_DOMAIN,
+    date: new Date().toISOString()
+});
+
+// ============================================================================
+// INSTRUCTIONS
+// ============================================================================
+
+const welcome = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <div class="instructions">
+            <h1>Now you will start the Decision Task.</h1>
+            <p>Your participant code for this part of the experiment is: <strong>${PARTICIPANT_CODE}</strong></p>
+            <p>You will complete a simple investment task where you make decisions about money.</p>
+            <p>Please read the instructions carefully.</p>
+            <p><em>Press SPACE to continue.</em></p>
+        </div>
+    `,
+    choices: [' ']
+};
+
+const instructions1 = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+        const taskDesc = RISK_DOMAIN === 'Social' ? `
+            <p>In each round, you will be paired with another participant.
+            You will see their participant code and they will see yours (e.g., KM47, TL23).
+            You will interact with a different participant each round.</p>
+            <p>You have 2 options. You can choose:</p>
+            <ul>
+                <li><strong>OUT:</strong> You keep your €10, the other participant gets €0. The round ends.</li>
+                <li><strong>IN:</strong> Your €10 becomes €40 and goes to the other participant. Then the other participant decides:
+                        <li><strong>If they choose OUT:</strong> They keep all €40. You get €0.</li>
+                        <li><strong>If they choose IN:</strong> They split the €40 with you. You each get €20.</li>
+                    </ul>
+                </li>
+            </ul>
+        ` : `
+            <p>In each round, you will be paired with a lottery machine.
+            You will see the lottery's ID code (e.g., LM47, LT23).
+            You will play a different lottery each round.</p>
+            <p>You have 2 options. You can choose:</p>
+            <ul>
+                <li><strong>OUT:</strong> You keep your €10. The round ends.</li>
+                <li><strong>IN:</strong> Your €10 becomes €40 and you play the lottery. Then the lottery determines the outcome:
+                    <ul>
+                        <li><strong>If the lottery result is OUT (you lose):</strong> You get €0.</li>
+                        <li><strong>If the lottery result is IN (you win):</strong> You get €20.</li>
+                    </ul>
+                </li>
+            </ul>
+        `;
+        
+        return `
+            <div class="instructions">
+                <h2>Task Instructions</h2>
+                ${taskDesc}
+                <p><em>Press SPACE to continue.</em></p>
+            </div>
+        `;
+    },
+    choices: [' ']
+};
+
+const instructions2 = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+        const partnerLabel = RISK_DOMAIN === 'Social' ? "partner's" : "lottery";
+        const entity = RISK_DOMAIN === 'Social' ? "participant" : "lottery";
+        
+        return `
+            <div class="instructions">
+                <h2>Additional Information</h2>
+                <p>You will make several choices, divided in 2 part (blocks).</p>
+                <p>You will be paired with a different ${entity} each round.</p>
+                <p>Before your decision, you will receive information about the previous behavior of the ${partnerLabel} in rounds with others. For example, you may see "IN", "IN", "OUT" as the ${partnerLabel} history. This means that on 3 previous trials this was the ${partnerLabel} actual behavior.</p>
+                <p>You may also receive a recommendation about what to do. Some recommendations will be generated by an AI agent (ChatGPT) that has been trained on data from previous participants.</p>
+                <p>Other recommendations will be provided by other participants in this study. You can use this information as you like. You will also be asked for some recommendations.</p>
+                <p><em>Press SPACE to continue to comprehension check.</em></p>
+            </div>
+        `;
+    },
+    choices: [' ']
+};
+
+// ============================================================================
+// COMPREHENSION CHECK (3 questions - repeats until all correct)
+// ============================================================================
+
+const comprehension_q1 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        const scenario = RISK_DOMAIN === 'Social' ? 
+            'you choose IN and the other participant chooses OUT' :
+            'you choose IN and the lottery result is OUT (you lose)';
+            
+        return `
+            <div class="instructions">
+                <h2>Comprehension Check - Question 1 of 3</h2>
+                <p><strong>Question:</strong> If ${scenario},</p> 
+                <p>how much money do you get?</p>
+            </div>
+        `;
+    },
+    choices: ['€0', '€10', '€20', '€40'],
+    data: { 
+        correct_answer: 0,
+        question: 'q1'
+    },
+    on_finish: function(data) {
+        data.correct = data.response === 0;
+    }
+};
+
+const comprehension_q2 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        const scenario = RISK_DOMAIN === 'Social' ? 
+            'you choose IN and the other participant chooses IN' :
+            'you choose IN and the lottery result is IN (you win)';
+            
+        return `
+            <div class="instructions">
+                <h2>Comprehension Check - Question 2 of 3</h2>
+                <p><strong>Question:</strong> If ${scenario},</p>
+                <p>how much money do you get?</p>
+            </div>
+        `;
+    },
+    choices: ['€0', '€10', '€20', '€40'],
+    data: { 
+        correct_answer: 2,
+        question: 'q2'
+    },
+    on_finish: function(data) {
+        data.correct = data.response === 2;
+    }
+};
+
+const comprehension_q3 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        return `
+            <div class="instructions">
+                <h2>Comprehension Check - Question 3 of 3</h2>
+                <p><strong>Question:</strong> If you choose OUT, how much money do you get?</p>
+            </div>
+        `;
+    },
+    choices: ['€0', '€10', '€20', '€40'],
+    data: { 
+        correct_answer: 1,
+        question: 'q3'
+    },
+    on_finish: function(data) {
+        data.correct = data.response === 1;
+    }
+};
+
+const comprehension_feedback = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+        const last3 = jsPsych.data.get().last(3).values();
+        const allCorrect = last3.every(trial => trial.correct);
+        
+        if (allCorrect) {
+            return `
+                <div class="instructions">
+                    <div class="comprehension-feedback correct">
+                        ✓ Perfect! You got all questions correct!
+                    </div>
+                    <p style="margin-top: 30px;"><em>Press SPACE to begin the experiment.</em></p>
+                </div>
+            `;
+        } else {
+            const incorrectQs = last3
+                .map((trial, idx) => !trial.correct ? (idx + 1) : null)
+                .filter(q => q !== null);
+            
+            return `
+                <div class="instructions">
+                    <div class="comprehension-feedback incorrect">
+                        ✗ You got question(s) ${incorrectQs.join(', ')} wrong. Let's try again.
+                    </div>
+                    <p style="margin-top: 20px;"><strong>Remember the key points:</strong></p>
+                    <ul style="text-align: left;">
+                        <li>If you choose OUT: You keep €10</li>
+                        <li>If you choose IN and ${RISK_DOMAIN === 'Social' ? 'the other participant' : 'the lottery'} chooses OUT: You get €0</li>
+                        <li>If you choose IN and ${RISK_DOMAIN === 'Social' ? 'the other participant' : 'the lottery'} chooses IN: You get €20</li>
+                    </ul>
+                    <p><em>Press SPACE to try again.</em></p>
+                </div>
+            `;
+        }
+    },
+    choices: [' '],
+    trial_duration: null
+};
+
+const comprehension_loop = {
+    timeline: [
+        comprehension_q1,
+        comprehension_q2,
+        comprehension_q3,
+        comprehension_feedback
+    ],
+    loop_function: function() {
+        const last3 = jsPsych.data.get().last(4).values().slice(0, 3);
+        return !last3.every(trial => trial.correct);
+    }
+};
+
+// ============================================================================
+// GENERATE TRIALS
+// ============================================================================
+
+const TRIALS_BLOCK1 = generateTrialSequence(1, PARTNER_CODES_BLOCK1);
+const TRIALS_BLOCK2 = generateTrialSequence(2, PARTNER_CODES_BLOCK2);
+
+// Block 1 trials (NO TIMER)
+const block1_trials = TRIALS_BLOCK1.map(trialData => ({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: createTrialHTML(trialData, false),
+    choices: ['IN', 'OUT'],
+    button_html: '<button style="display:none;">%choice%</button>',
+    on_load: function() {
+        const btnIn = document.getElementById('btn-in');
+        const btnOut = document.getElementById('btn-out');
+        const adviceDisplay = document.getElementById('advice-display');
+        const decisionDisplay = document.getElementById('decision-display');
+        
+        // Track when decision buttons become visible (for accurate RT)
+        let decisionStartTime = null;
+        
+        // Sequential display timing
+        // 1. History shows immediately
+        
+        // 2. Show advice after 1.5 seconds
+        if (adviceDisplay) {
+            setTimeout(() => {
+                adviceDisplay.classList.remove('hidden');
+                adviceDisplay.classList.add('fade-in');
+            }, 1500);
+            
+            // 3. Show decision buttons after advice appears (1.5s + 1.5s delay)
+            setTimeout(() => {
+                decisionDisplay.classList.remove('hidden');
+                decisionDisplay.classList.add('fade-in');
+                decisionStartTime = performance.now(); // Start RT timer
+            }, 3000);
+        } else {
+            // No advice - show decision after 1.5 seconds
+            setTimeout(() => {
+                decisionDisplay.classList.remove('hidden');
+                decisionDisplay.classList.add('fade-in');
+                decisionStartTime = performance.now(); // Start RT timer
+            }, 1500);
+        }
+        
+        // Handle button clicks with RT tracking
+        btnIn.onclick = () => {
+            const rt = decisionStartTime ? performance.now() - decisionStartTime : null;
+            jsPsych.finishTrial({choice: 'IN', rt_from_buttons_visible: rt});
+        };
+        btnOut.onclick = () => {
+            const rt = decisionStartTime ? performance.now() - decisionStartTime : null;
+            jsPsych.finishTrial({choice: 'OUT', rt_from_buttons_visible: rt});
+        };
+    },
+    on_finish: function(data) {
+        const choice = data.choice;
+        let participantPayoff, partnerPayoff;
+        
+        if (choice === 'OUT') {
+            participantPayoff = CONFIG.ENDOWMENT;
+            partnerPayoff = CONFIG.ENDOWMENT;
+        } else {
+            if (trialData.willCooperate) {
+                participantPayoff = CONFIG.SHARE_AMOUNT;
+                partnerPayoff = CONFIG.SHARE_AMOUNT;
+            } else {
+                participantPayoff = 0;
+                partnerPayoff = 40;
+            }
+        }
+        
+        const hasAdvice = trialData.adviceCondition !== 'none';
+        const followedGoodAdvice = hasAdvice && trialData.quality === 'good' && 
+                                   choice === trialData.recommendation;
+        const followedAdvice = hasAdvice && choice === trialData.recommendation;
+        
+        data.block = trialData.block;
+        data.trial_num = trialData.trialNum;
+        data.partner_code = trialData.partnerCode;
+        data.advice_condition = trialData.adviceCondition;
+        data.advisor_id = trialData.advisorId || 'NA';
+        data.advice_quality = trialData.quality;
+        data.advice_recommendation = trialData.recommendation || 'NA';
+        data.history = JSON.stringify(trialData.history);
+        data.cooperation_rate = trialData.cooperationRate;
+        data.optimal_choice = trialData.optimalChoice;
+        data.history_label = trialData.historyLabel;
+        data.chose_optimal = choice === trialData.optimalChoice;
+        data.will_cooperate = trialData.willCooperate;
+        data.participant_payoff = participantPayoff;
+        data.partner_payoff = partnerPayoff;
+        data.cognitive_load = 'Low';
+        data.has_advice = hasAdvice;
+        data.followed_advice = followedAdvice;
+        data.followed_good_advice = followedGoodAdvice;
+        
+        // Experimental condition assignment
+        data.risk_domain = RISK_DOMAIN;
+        data.advisor_order = ADVISOR_ORDER;
+        
+        // RT tracking: we have both jsPsych's default RT (from trial start) 
+        // and our custom RT (from when buttons became visible)
+        data.rt_jspsych = data.rt; // jsPsych's built-in RT from trial start
+        data.rt_decision = data.rt_from_buttons_visible || data.rt; // RT from buttons visible
+    },
+    post_trial_gap: CONFIG.ITI_DURATION
+}));
+
+// Break screen
+const break_screen = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <div class="instructions">
+            <h2>Block 1 Completed</h2>
+            <p>Please wait while we continue to Block 2.</p>
+            
+            <div class="stress-warning">
+                ATTENTION<br>
+                In the next block, you will have<br>
+                <strong>limited time</strong><br>
+                to make each choice.<br>
+                You must be quick!
+            </div>
+            
+            <div class="break-countdown" id="countdown">${CONFIG.BREAK_DURATION/1000}</div>
+            <p>The next block will begin automatically...</p>
+        </div>
+    `,
+    choices: "NO_KEYS",
+    trial_duration: CONFIG.BREAK_DURATION,
+    on_load: function() {
+        let timeLeft = CONFIG.BREAK_DURATION / 1000;
+        const countdownElement = document.getElementById('countdown');
+        const interval = setInterval(() => {
+            timeLeft--;
+            if (countdownElement && timeLeft >= 0) {
+                countdownElement.textContent = timeLeft;
+            }
+            if (timeLeft < 0) {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
+};
+
+// Block 2 trials (WITH TIMER)
+const block2_trials = TRIALS_BLOCK2.map(trialData => ({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: createTrialHTML(trialData, true),
+    choices: ['IN', 'OUT'],
+    button_html: '<button style="display:none;">%choice%</button>',
+    // No trial_duration - participant MUST make a choice
+    on_load: function() {
+        const btnIn = document.getElementById('btn-in');
+        const btnOut = document.getElementById('btn-out');
+        const fill = document.getElementById('timer-fill');
+        const warning = document.getElementById('timer-warning');
+        const adviceDisplay = document.getElementById('advice-display');
+        const decisionDisplay = document.getElementById('decision-display');
+        
+        let responded = false;
+        let isRunning = false; // Timer starts later
+        let lastPercent = 100;
+        let startTime;
+        let decisionStartTime; // Track when buttons become visible for RT
+        
+        if (!fill || !warning || !btnIn || !btnOut) {
+            console.error('Required elements not found');
+            return;
+        }
+        
+        fill.style.width = '100%';
+        fill.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
+        warning.style.display = 'none';
+        warning.textContent = '';
+        
+        // Sequential display timing
+        // 1. History shows immediately
+        
+        // 2. Show advice after 1.5 seconds
+        const adviceDelay = adviceDisplay ? 1500 : 0;
+        if (adviceDisplay) {
+            setTimeout(() => {
+                adviceDisplay.classList.remove('hidden');
+                adviceDisplay.classList.add('fade-in');
+            }, 1500);
+        }
+        
+        // 3. Show decision buttons and START TIMER after advice (1.5s after advice)
+        setTimeout(() => {
+            decisionDisplay.classList.remove('hidden');
+            decisionDisplay.classList.add('fade-in');
+            
+            // Start timer and RT tracking
+            isRunning = true;
+            startTime = Date.now();
+            decisionStartTime = performance.now(); // Start RT timer
+            requestAnimationFrame(updateTimer);
+        }, adviceDelay + 1500);
+        
+        function updateTimer() {
+            if (!isRunning || responded) {
+                return;
+            }
+            
+            const elapsed = Date.now() - startTime;
+            const remaining = CONFIG.DECISION_TIME_WITH_PRESSURE - elapsed;
+            
+            if (remaining <= 0) {
+                // Timer has run out - turn screen red and update message
+                isRunning = false;
+                if (fill) fill.style.width = '0%';
+                
+                // Turn entire screen pale red
+                document.body.style.backgroundColor = '#ffcccc';
+                
+                // Change warning message
+                if (warning) {
+                    warning.textContent = 'Please make a choice now';
+                    warning.style.display = 'block';
+                    warning.style.color = '#dc2626';
+                }
+                
+                // Keep buttons visible and active - do NOT advance to next trial
+                return;
+            }
+            
+            const percent = Math.max(0, Math.min(100, (remaining / CONFIG.DECISION_TIME_WITH_PRESSURE) * 100));
+            const seconds = Math.ceil(remaining / 1000);
+            
+            if (Math.abs(percent - lastPercent) >= 0.5) {
+                lastPercent = percent;
+                fill.style.width = percent + '%';
+                
+                if (percent < 30) {
+                    fill.style.background = 'linear-gradient(90deg, #7f1d1d 0%, #991b1b 100%)';
+                }
+            }
+            
+            if (seconds <= 5) {
+                if (warning.style.display === 'none') {
+                    warning.textContent = 'HURRY!';
+                    warning.style.display = 'block';
+                }
+            } else {
+                if (warning.style.display !== 'none') {
+                    warning.style.display = 'none';
+                }
+            }
+            
+            if (isRunning && !responded) {
+                requestAnimationFrame(updateTimer);
+            }
+        }
+        
+        function handleResponse(choice) {
+            if (!responded) {
+                responded = true;
+                isRunning = false;
+                
+                // Track if response was made after timer expired
+                const elapsed = Date.now() - startTime;
+                const respondedAfterTimeout = elapsed > CONFIG.DECISION_TIME_WITH_PRESSURE;
+                
+                // Reset background color before advancing
+                document.body.style.backgroundColor = 'white';
+                
+                const rt = decisionStartTime ? performance.now() - decisionStartTime : null;
+                jsPsych.finishTrial({
+                    choice: choice, 
+                    timeout: false, 
+                    rt_from_buttons_visible: rt,
+                    late_response: respondedAfterTimeout
+                });
+            }
+        }
+        
+        btnIn.onclick = () => handleResponse('IN');
+        btnOut.onclick = () => handleResponse('OUT');
+    },
+    on_finish: function(data) {
+        const choice = data.choice; // Will always have a choice (no more auto-timeout)
+        let participantPayoff, partnerPayoff;
+        
+        if (choice === 'OUT') {
+            participantPayoff = CONFIG.ENDOWMENT;
+            partnerPayoff = CONFIG.ENDOWMENT;
+        } else {
+            if (trialData.willCooperate) {
+                participantPayoff = CONFIG.SHARE_AMOUNT;
+                partnerPayoff = CONFIG.SHARE_AMOUNT;
+            } else {
+                participantPayoff = 0;
+                partnerPayoff = 40;
+            }
+        }
+        
+        const hasAdvice = trialData.adviceCondition !== 'none';
+        const followedGoodAdvice = hasAdvice && trialData.quality === 'good' && 
+                                   choice === trialData.recommendation;
+        const followedAdvice = hasAdvice && choice === trialData.recommendation;
+        
+        data.block = trialData.block;
+        data.trial_num = trialData.trialNum;
+        data.partner_code = trialData.partnerCode;
+        data.advice_condition = trialData.adviceCondition;
+        data.advisor_id = trialData.advisorId || 'NA';
+        data.advisor_color = trialData.advisorColor || 'NA';
+        data.advice_quality = trialData.quality;
+        data.advice_recommendation = trialData.recommendation || 'NA';
+        data.history = JSON.stringify(trialData.history);
+        data.cooperation_rate = trialData.cooperationRate;
+        data.optimal_choice = trialData.optimalChoice;
+        data.history_label = trialData.historyLabel;
+        data.chose_optimal = choice === trialData.optimalChoice;
+        data.will_cooperate = trialData.willCooperate;
+        data.participant_payoff = participantPayoff;
+        data.partner_payoff = partnerPayoff;
+        data.choice = choice;
+        data.cognitive_load = 'High';
+        data.has_advice = hasAdvice;
+        data.followed_advice = followedAdvice;
+        data.followed_good_advice = followedGoodAdvice;
+        
+        // Experimental condition assignment
+        data.risk_domain = RISK_DOMAIN;
+        data.advisor_order = ADVISOR_ORDER;
+        
+        // RT tracking: we have both jsPsych's default RT (from trial start) 
+        // and our custom RT (from when buttons became visible)
+        data.rt_jspsych = data.rt; // jsPsych's built-in RT from trial start
+        data.rt_decision = data.rt_from_buttons_visible || data.rt; // RT from buttons visible
+        data.late_response = data.late_response || false; // Flag if participant responded after timer expired
+    },
+    post_trial_gap: CONFIG.ITI_DURATION
+}));
+
+// ============================================================================
+// ADVICE GIVING TRIALS (6 trials - same histories as no-advice section)
+// ============================================================================
+
+// Helper function to select random 67% pattern for advice-giving
+function getRandomAdviceGiving67Pattern() {
+    const patterns = [[1, 1, 0], [1, 0, 1], [0, 1, 1]];
+    return patterns[Math.floor(Math.random() * patterns.length)];
+}
+
+// Helper function to select random 33% pattern for advice-giving
+function getRandomAdviceGiving33Pattern() {
+    const patterns = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    return patterns[Math.floor(Math.random() * patterns.length)];
+}
+
+// Generate 6 advice-giving scenarios with same distribution as no-advice trials
+const ADVICE_SCENARIOS = [
+    { partnerCode: generateParticipantCode(), history: [1, 1, 1] }, // 100%
+    { partnerCode: generateParticipantCode(), history: [0, 0, 0] }, // 0%
+    { partnerCode: generateParticipantCode(), history: getRandomAdviceGiving67Pattern() }, // 67%
+    { partnerCode: generateParticipantCode(), history: getRandomAdviceGiving67Pattern() }, // 67%
+    { partnerCode: generateParticipantCode(), history: getRandomAdviceGiving33Pattern() }, // 33%
+    { partnerCode: generateParticipantCode(), history: getRandomAdviceGiving33Pattern() }  // 33%
+];
+
+// Randomize presentation order
+const shuffledAdviceScenarios = [...ADVICE_SCENARIOS].sort(() => Math.random() - 0.5);
+
+const advice_giving_trials = shuffledAdviceScenarios.map((scenario, idx) => ({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        const partnerLabel = RISK_DOMAIN === 'Social' ? 'PARTICIPANT' : 'LOTTERY';
+        
+        const historyHTML = scenario.history.map((choice) => {
+            const choiceLabel = choice === 1 ? 'IN' : 'OUT';
+            const choiceClass = choice === 1 ? 'in' : 'out';
+            return `
+                <div class="history-box ${choiceClass}">
+                    <div class="decision-label">${choiceLabel}</div>
+                </div>
+            `;
+        }).join('');
+        
+        return `
+            <div style="max-width: 900px; margin: 80px auto; padding: 30px;">
+                <div style="background: #f7fafc; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <strong style="font-size: 18px;">${partnerLabel} ${scenario.partnerCode}'s history:</strong>
+                    </div>
+                    <div class="history-boxes" style="display: flex; justify-content: center; gap: 15px;">
+                        ${historyHTML}
+                    </div>
+                </div>
+                
+                <p style="font-size: 20px; text-align: center; margin: 30px 0 20px 0;">
+                    Another participant is has to make a decision. What do you advise them to do, given this is the history of 3 previous trials?
+                </p>
+            </div>
+        `;
+    },
+    choices: ['Advise IN', 'Advise OUT'],
+    button_html: `
+        <button style="width: 250px; height: 80px; font-size: 24px; font-weight: bold; 
+                       border: 4px solid black; border-radius: 8px; cursor: pointer; 
+                       margin: 0 20px; transition: all 0.2s;
+                       background-color: %choice% === 'Advise IN' ? '#e8f4ff' : '#fff0e8';">
+            %choice%
+        </button>
+    `,
+    on_finish: function(data) {
+        data.trial_type = 'advice_giving';
+        data.advice_trial_num = idx + 1;
+        data.partner_code = scenario.partnerCode;
+        data.history = JSON.stringify(scenario.history);
+        data.advice_given = data.response === 0 ? 'IN' : 'OUT';
+    }
+}));
+
+// Final transition message after advice trials
+const advice_complete = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `
+        <div class="instructions">
+            <p>We will now continue with the investment task.</p>
+            <p><em>Press SPACE to continue.</em></p>
+        </div>
+    `,
+    choices: [' ']
+};
+
+// ============================================================================
+// FULL TIMELINE
+// ============================================================================
+
+const timeline = [
+    welcome,
+    instructions1,
+    instructions2,
+    comprehension_loop
+];
+
+// Separate Block 1 trials by advice type
+const block1_no_advice = block1_trials.filter((_, idx) => TRIALS_BLOCK1[idx].adviceCondition === 'none');
+const block1_with_advice = block1_trials.filter((_, idx) => TRIALS_BLOCK1[idx].adviceCondition !== 'none');
+
+// Add Block 1 NO ADVICE trials with fixation crosses
+block1_no_advice.forEach(trial => {
+    timeline.push(createFixation());
+    timeline.push(trial);
+});
+
+// Add advice giving trials (RIGHT AFTER no-advice trials)
+advice_giving_trials.forEach(trial => {
+    timeline.push(trial);
+});
+timeline.push(advice_complete);
+
+// Add Block 1 WITH ADVICE trials (AI and human) with fixation crosses
+block1_with_advice.forEach(trial => {
+    timeline.push(createFixation());
+    timeline.push(trial);
+});
+
+// Add break
+timeline.push(break_screen);
+
+// Add Block 2 trials with fixation crosses
+block2_trials.forEach(trial => {
+    timeline.push(createFixation());
+    timeline.push(trial);
+});
+
+jsPsych.run(timeline);
+
+</script>
+</html>
