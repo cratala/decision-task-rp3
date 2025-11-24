@@ -477,7 +477,8 @@ const CONFIG = {
 };
 
 // 🎲 RANDOMLY SELECT TASK TYPE (Social vs Non-social) AND ADVISOR ORDER
-const RISK_DOMAIN = Math.random() < 0.5 ? 'Social' : 'Non-social';
+
+const RISK_DOMAIN = 'Non-social';
 const ADVISOR_ORDER = Math.random() < 0.5 ? 'ai-first' : 'human-first';
 
 console.log('Task type selected:', RISK_DOMAIN);
